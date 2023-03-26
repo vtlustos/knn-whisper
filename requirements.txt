@@ -1,0 +1,6 @@
+datasets>=2.6.1
+git+https://github.com/huggingface/transformers
+librosa
+valuate
+jiwer
+gradio
