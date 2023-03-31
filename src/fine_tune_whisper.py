@@ -10,6 +10,9 @@ from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments,
                           WhisperTokenizer)
 
 # notebook_login()
+from huggingface_hub.hf_api import HfFolder 
+HfFolder.save_token('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')
+
 
 """## Load Dataset
 
@@ -27,9 +30,9 @@ of `test` data as our held-out test set:
 common_voice = DatasetDict()
 
 common_voice["train"] = load_dataset(
-    "mozilla-foundation/common_voice_11_0", "hi", split="train+validation", use_auth_token=True)
+    "mozilla-foundation/common_voice_11_0", "cs", split="train+validation", use_auth_token=True)
 common_voice["test"] = load_dataset(
-    "mozilla-foundation/common_voice_11_0", "hi", split="test", use_auth_token=True)
+    "mozilla-foundation/common_voice_11_0", "cs", split="test", use_auth_token=True)
 
 print(common_voice)
 
@@ -57,14 +60,14 @@ feature_extractor = WhisperFeatureExtractor.from_pretrained(
 
 
 tokenizer = WhisperTokenizer.from_pretrained(
-    "openai/whisper-small", language="Hindi", task="transcribe")
+    "openai/whisper-small", language="Czech", task="transcribe")
 
 """### Combine To Create A WhisperProcessor
 """
 
 
 processor = WhisperProcessor.from_pretrained(
-    "openai/whisper-small", language="Hindi", task="transcribe")
+    "openai/whisper-small", language="Czech", task="transcribe")
 
 """### Prepare Data
 """
@@ -195,12 +198,12 @@ In the final step, we define all the parameters related to training. For more de
 
 
 training_args = Seq2SeqTrainingArguments(
-    output_dir="./whisper-small-hi",  # change to a repo name of your choice
-    per_device_train_batch_size=16,
+    output_dir="./whisper-small-cs",  # change to a repo name of your choice
+    per_device_train_batch_size=32,
     gradient_accumulation_steps=1,  # increase by 2x for every 2x decrease in batch size
-    learning_rate=1e-5,
+    learning_rate=1.25e-5,
     warmup_steps=500,
-    max_steps=4000,
+    max_steps=8000,
     gradient_checkpointing=True,
     fp16=True,
     evaluation_strategy="steps",
