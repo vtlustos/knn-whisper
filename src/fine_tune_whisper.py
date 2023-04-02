@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 import evaluate
 import torch
-from datasets import Audio, DatasetDict, load_dataset
+from datasets import Audio, DatasetDict, load_dataset,load_from_disk
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments,
                           WhisperFeatureExtractor,
                           WhisperForConditionalGeneration, WhisperProcessor,
@@ -27,36 +27,36 @@ of `test` data as our held-out test set:
 """
 
 
-common_voice = DatasetDict()
+# common_voice = DatasetDict()
 
-common_voice["train"] = load_dataset(
-    "mozilla-foundation/common_voice_11_0", "cs", split="train+validation", use_auth_token=True)
-common_voice["test"] = load_dataset(
-    "mozilla-foundation/common_voice_11_0", "cs", split="test", use_auth_token=True)
+# common_voice["train"] = load_dataset(
+#     "mozilla-foundation/common_voice_11_0", "cs", split="train+validation", use_auth_token=True)
+# common_voice["test"] = load_dataset(
+#     "mozilla-foundation/common_voice_11_0", "cs", split="test", use_auth_token=True)
 
-print(common_voice)
+# print(common_voice)
 
-"""Most ASR datasets only provide input audio samples (`audio`) and the 
-corresponding transcribed text (`sentence`). Common Voice contains additional 
-metadata information, such as `accent` and `locale`, which we can disregard for ASR.
-Keeping the notebook as general as possible, we only consider the input audio and
-transcribed text for fine-tuning, discarding the additional metadata information:
-"""
+# """Most ASR datasets only provide input audio samples (`audio`) and the 
+# corresponding transcribed text (`sentence`). Common Voice contains additional 
+# metadata information, such as `accent` and `locale`, which we can disregard for ASR.
+# Keeping the notebook as general as possible, we only consider the input audio and
+# transcribed text for fine-tuning, discarding the additional metadata information:
+# """
 
-common_voice = common_voice.remove_columns(
-    ["accent", "age", "client_id", "down_votes", "gender", "locale", "path", "segment", "up_votes"])
+# common_voice = common_voice.remove_columns(
+#     ["accent", "age", "client_id", "down_votes", "gender", "locale", "path", "segment", "up_votes"])
 
-print(common_voice)
+# print(common_voice)
 
-"""## Prepare Feature Extractor, Tokenizer and Data
-"""
+# """## Prepare Feature Extractor, Tokenizer and Data
+# """
 
 
-feature_extractor = WhisperFeatureExtractor.from_pretrained(
-    "openai/whisper-small")
+# feature_extractor = WhisperFeatureExtractor.from_pretrained(
+#     "openai/whisper-small")
 
-"""### Load WhisperTokenizer
-"""
+# """### Load WhisperTokenizer
+# """
 
 
 tokenizer = WhisperTokenizer.from_pretrained(
@@ -72,7 +72,7 @@ processor = WhisperProcessor.from_pretrained(
 """### Prepare Data
 """
 
-print(common_voice["train"][0])
+# print(common_voice["train"][0])
 
 """Since 
 our input audio is sampled at 48kHz, we need to _downsample_ it to 
@@ -80,13 +80,13 @@ our input audio is sampled at 48kHz, we need to _downsample_ it to
 """
 
 
-common_voice = common_voice.cast_column("audio", Audio(sampling_rate=16000))
+# common_voice = common_voice.cast_column("audio", Audio(sampling_rate=16000))
 
 """Re-loading the first audio sample in the Common Voice dataset will resample 
 it to the desired sampling rate:
 """
 
-print(common_voice["train"][0])
+# print(common_voice["train"][0])
 
 
 def prepare_dataset(batch):
@@ -103,9 +103,10 @@ def prepare_dataset(batch):
 
 
 """We can apply the data preparation function to all of our training examples using dataset's `.map` method. The argument `num_proc` specifies how many CPU cores to use. Setting `num_proc` > 1 will enable multiprocessing. If the `.map` method hangs with multiprocessing, set `num_proc=1` and process the dataset sequentially."""
+# common_voice = common_voice.map(
+#     prepare_dataset, remove_columns=common_voice.column_names["train"], num_proc=1)
 
-common_voice = common_voice.map(
-    prepare_dataset, remove_columns=common_voice.column_names["train"], num_proc=2)
+common_voice = load_from_disk("../common-voice-13")
 
 """## Training and Evaluation
 """
@@ -198,14 +199,14 @@ In the final step, we define all the parameters related to training. For more de
 
 
 training_args = Seq2SeqTrainingArguments(
-    output_dir="./whisper-small-cs",  # change to a repo name of your choice
+    output_dir="/storage/brno12-cerit/home/xvlasa15/WhisperSmallCommonVoice",  # change to a repo name of your choice
     per_device_train_batch_size=32,
     gradient_accumulation_steps=1,  # increase by 2x for every 2x decrease in batch size
     learning_rate=1.25e-5,
     warmup_steps=500,
-    max_steps=8000,
+    max_steps=20000,
     gradient_checkpointing=True,
-    fp16=True,
+    fp16=False,
     evaluation_strategy="steps",
     per_device_eval_batch_size=8,
     predict_with_generate=True,
