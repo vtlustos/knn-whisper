@@ -1,5 +1,5 @@
 datasets>=2.6.1
-git+https://github.com/huggingface/transformers
+transformers
 librosa
 evaluate>=0.3.0
 jiwer

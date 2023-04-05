@@ -1,7 +1,7 @@
 #PBS -N CommonVoiceFinetuneWhisperSmallCZ
-#PBS -q gpu@cerit-pbs.cerit-sc.cz
+#PBS -q gpu@meta-pbs.metacentrum.cz
 #PBS -l walltime=24:0:0
-#PBS -l select=1:ncpus=1:ngpus=1:mem=16gb:scratch_ssd=60gb:cl_zia=True
+#PBS -l select=1:ncpus=1:ngpus=1:mem=100gb:scratch_shm=True:cl_galdor=True
 #PBS -m a
 
 REPODIR=/storage/brno12-cerit/home/xvlasa15/knn-whisper

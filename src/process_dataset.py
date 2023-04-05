@@ -30,9 +30,9 @@ of `test` data as our held-out test set:
 common_voice = DatasetDict()
 
 common_voice["train"] = load_dataset(
-    "mozilla-foundation/common_voice_13_0", "cs", split="train+validation", use_auth_token=True)
+    "mozilla-foundation/common_voice_11_0", "cs", split="train+validation", use_auth_token=True)
 common_voice["test"] = load_dataset(
-    "mozilla-foundation/common_voice_13_0", "cs", split="test", use_auth_token=True)
+    "mozilla-foundation/common_voice_11_0", "cs", split="test", use_auth_token=True)
 
 print(common_voice)
 
@@ -105,4 +105,4 @@ def prepare_dataset(batch):
 common_voice = common_voice.map(
     prepare_dataset, remove_columns=common_voice.column_names["train"], num_proc=4)
 
-common_voice.save_to_disk("../common-voice-13")
+common_voice.save_to_disk("../common-voice-11-hi")
