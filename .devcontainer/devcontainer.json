@@ -1,9 +1,0 @@
-{
-    "name": "Whisper",
-    "build": {
-        "dockerfile": "../docker/Dockerfile"
-    },
-    "mounts": [
-    ],
-    "runArgs": ["--gpus=all"]
-}
