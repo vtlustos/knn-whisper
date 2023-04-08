@@ -3,7 +3,6 @@ import os
 import tarfile
 import librosa
 import datasets
-import spacy
 _LICENSE = "https://creativecommons.org/licenses/by/4.0/"
 _HOMEPAGE = "https://lindat.mff.cuni.cz/repository/xmlui/handle/11234/1-3126"
 _DATASET_URL = "https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-3126/snemovna.tar.xz"
@@ -42,24 +41,6 @@ class CzechParliamentPlenaryHearings(GeneratorBasedBuilder):
             license=_LICENSE
         )
     
-    def add_punctuation(text):
-        doc = nlp(text)
-        # Tokenize the text using the Transformers tokenizer
-        inputs = tokenizer(text, return_tensors="pt")
-
-        # Use the Transformers model to predict the punctuation for each token
-        outputs = model(**inputs)
-        predictions = outputs.logits.argmax(dim=-1)
-
-        # Combine the Spacy tokens with the predicted punctuation to form the final punctuated text
-        punctuated_text = ""
-        for i, token in enumerate(doc):
-            punctuated_text += token.text
-            if i < len(doc) - 1 and predictions[0][i+1] == 1:
-                punctuated_text += " "
-
-        return punctuated_text
-
     def _split_generators(self, dl_manager):
         data_dir = dl_manager.download_and_extract(_DATASET_URL)
         data_dir = os.path.join(data_dir, 'ASR_DATA')
@@ -100,7 +81,8 @@ class CzechParliamentPlenaryHearings(GeneratorBasedBuilder):
                             'id': id,
                             'audio': {
                                 'path': audio_path,
-                                'bytes': audio.tobytes()
+                                'array': audio.tobytes(),
+                                'sampling_rate': 48000
                             },
                             'transcription': transcription,
                         }
