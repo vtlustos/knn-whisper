@@ -1,0 +1,1 @@
+python preprocess.py -d common_voice -p "openai/whisper-large-v2" -o ./

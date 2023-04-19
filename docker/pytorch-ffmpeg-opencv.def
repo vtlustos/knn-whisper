@@ -8,7 +8,7 @@ From: pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime
     # install ffmpeg and opencv
     apt update 
     apt -y upgrade
-    apt install -f -y ffmpeg libsm6 libxext6 git-lfs
+    apt install -f -y ffmpeg libsm6 libxext6 git-lfs gcc
 
     # pip instal packages
     pip install ultralytics opencv-python transformers
