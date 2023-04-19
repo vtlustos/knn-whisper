@@ -65,20 +65,20 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
             eval_dataset=common_voice["test"],
             data_collator=data_collator,
             compute_metrics=WER(tokenizer=processor.tokenizer),
-            tokenizer=processor.tokenizer,
+            tokenizer=processor.feature_extractor,
         )
     
     trainer = DistillationTrainer(
-        model=student_model,
+        config=training_args,
+        student_model=student_model,
         teacher_model=teacher_model,
-        temperature=2.0,
-        supervised=False,
-        args=training_args,
         train_dataset=common_voice["train"],
         eval_dataset=common_voice["test"],
-        compute_metrics=WER(tokenizer=processor.tokenizer),
+        tokenizer=processor.tokenizer,
         data_collator=data_collator,
-        tokenizer=processor.tokenizer
+        compute_metrics=WER(tokenizer=processor.tokenizer),
+        temperature=2.0,
+        supervised=False
     )
 
     # evaluate model before the first step

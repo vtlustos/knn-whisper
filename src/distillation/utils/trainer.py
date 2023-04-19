@@ -3,8 +3,21 @@ from transformers import (Seq2SeqTrainer)
 
 class DistillationTrainer(Seq2SeqTrainer):
 
-    def __init__(self, teacher_model, temperature, supervised=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)       
+    def __init__(self, config, student_model, teacher_model, 
+                 train_dataset, eval_dataset, tokenizer,
+                 data_collator, compute_metrics, 
+                 temperature=2.0, supervised=False):
+        
+        super().__init__(
+            args=config,
+            model=student_model,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            compute_metrics=compute_metrics
+        )
+
         self.teacher = teacher_model
         self.temperature = temperature
         self.supervised = supervised
