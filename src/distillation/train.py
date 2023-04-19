@@ -1,6 +1,7 @@
 from src.distillation.utils.collator import DataCollatorSpeechSeq2SeqWithPadding
 from src.distillation.utils.trainer import DistillationTrainer
 from src.distillation.utils.wer import WER
+from optparse import OptionParser
 from datasets import load_from_disk
 from transformers import (Seq2SeqTrainingArguments, WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
@@ -58,6 +59,7 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
         model=student_model,
         teacher_model=teacher_model,
         temperature=2.0,
+        supervised=False,
         args=training_args,
         train_dataset=common_voice["train"],
         eval_dataset=common_voice["test"],
@@ -75,3 +77,14 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
 
     trainer.train()
 
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option("-d", "--dataset", dest="dataset_path",
+                      help="Path to the dataset")
+    parser.add_option("-t", "--train-dir", dest="train_dir_path",
+                      help="Path to the training directory")
+    parser.add_option("-l", "--language", dest="language",
+                      help="Language to use (default: cs,Czech)", default=("cs", "Czech"))
+    (options, args) = parser.parse_args()
+
+    train(options.dataset_path, options.train_dir_path, options.language)
