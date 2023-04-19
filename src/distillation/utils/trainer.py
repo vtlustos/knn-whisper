@@ -1,7 +1,7 @@
 import torch
-from transformers import (Seq2SeqTrainer)
+from transformers import (Trainer)
 
-class DistillationTrainer(Seq2SeqTrainer):
+class DistillationTrainer(Trainer):
 
     def __init__(self, config, student_model, teacher_model, 
                  train_dataset, eval_dataset, tokenizer,
@@ -24,13 +24,13 @@ class DistillationTrainer(Seq2SeqTrainer):
         self.ce_loss = torch.nn.CrossEntropyLoss(ignore_index=-100)
         self.kl_loss = torch.nn.KLDivLoss(reduction="batchmean", log_target=True)
 
-    def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.get("labels")
-        student_outputs = model(**inputs)
+    def compute_loss(self, model, inputs):
+        labels = inputs.pop("labels")
+        student_outputs = model(**inputs, use_cache=False)
         student_logits = student_outputs.get("logits")
 
         with torch.no_grad():
-            teacher_outputs = self.teacher(**inputs)
+            teacher_outputs = self.teacher(**inputs, use_cache=False)
             teacher_logits = teacher_outputs.get("logits")
 
         kl_loss = self.kl_loss(
@@ -44,4 +44,4 @@ class DistillationTrainer(Seq2SeqTrainer):
             ce_loss = self.ce_loss(student_logits, labels)
             loss = alpha * ce_loss + (1 - alpha) * kl_loss
 
-        return (loss, student_outputs) if return_outputs else loss
+        return loss

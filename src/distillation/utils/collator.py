@@ -27,8 +27,8 @@ class DataCollatorSpeechSeq2SeqWithPadding:
         
         # if bos token is appended in previous tokenization step,
         # cut bos token here as it's append later anyways
-        if (labels[:, 0] == self.processor.tokenizer.bos_token_id).all().cpu().item():
-            labels = labels[:, 1:]
+        #if (labels[:, 0] == self.processor.tokenizer.bos_token_id).all().cpu().item():
+        #    labels = labels[:, 1:]
 
         batch["labels"] = labels
 
