@@ -1,6 +1,6 @@
 class DataCollatorSpeechSeq2SeqWithPadding:
 
-    def __init__(self, processor) -> None:
+    def __init__(self, processor):
         self.processor = processor
 
     def __call__(self, features):

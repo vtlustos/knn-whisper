@@ -3,7 +3,8 @@ from src.distillation.utils.trainer import DistillationTrainer
 from src.distillation.utils.wer import WER
 from optparse import OptionParser
 from datasets import load_from_disk
-from transformers import (Seq2SeqTrainingArguments, WhisperForConditionalGeneration, 
+from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
+                          WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token('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')
@@ -55,7 +56,18 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
         push_to_hub=False,
         logging_first_step=True
     )
-    trainer = DistillationTrainer(
+
+    trainer = Seq2SeqTrainer(
+        args=training_args,
+        model=student_model,
+        train_dataset=common_voice["train"],
+        eval_dataset=common_voice["test"],
+        data_collator=data_collator,
+        compute_metrics=WER(tokenizer=processor.tokenizer),
+        tokenizer=processor.feature_extractor,
+    )
+    
+    """ trainer = DistillationTrainer(
         model=student_model,
         teacher_model=teacher_model,
         temperature=2.0,
@@ -66,7 +78,7 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
         compute_metrics=WER(tokenizer=processor.tokenizer),
         data_collator=data_collator,
         tokenizer=processor.tokenizer
-    )
+    ) """
 
     # evaluate model before the first step
     class EvaluateFirstStepCallback(TrainerCallback):
