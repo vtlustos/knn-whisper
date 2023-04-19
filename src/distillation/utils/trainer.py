@@ -1,7 +1,7 @@
 import torch
-from transformers import (Trainer)
+from transformers import (Seq2SeqTrainer)
 
-class DistillationTrainer(Trainer):
+class DistillationTrainer(Seq2SeqTrainer):
 
     def __init__(self, config, student_model, teacher_model, 
                  train_dataset, eval_dataset, tokenizer,
