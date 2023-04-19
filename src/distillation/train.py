@@ -57,17 +57,18 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
         logging_first_step=True
     )
 
-    trainer = Seq2SeqTrainer(
-        args=training_args,
-        model=student_model,
-        train_dataset=common_voice["train"],
-        eval_dataset=common_voice["test"],
-        data_collator=data_collator,
-        compute_metrics=WER(tokenizer=processor.tokenizer),
-        tokenizer=processor.feature_extractor,
-    )
+    if False:
+        trainer = Seq2SeqTrainer(
+            args=training_args,
+            model=student_model,
+            train_dataset=common_voice["train"],
+            eval_dataset=common_voice["test"],
+            data_collator=data_collator,
+            compute_metrics=WER(tokenizer=processor.tokenizer),
+            tokenizer=processor.tokenizer,
+        )
     
-    """ trainer = DistillationTrainer(
+    trainer = DistillationTrainer(
         model=student_model,
         teacher_model=teacher_model,
         temperature=2.0,
@@ -78,7 +79,7 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
         compute_metrics=WER(tokenizer=processor.tokenizer),
         data_collator=data_collator,
         tokenizer=processor.tokenizer
-    ) """
+    )
 
     # evaluate model before the first step
     class EvaluateFirstStepCallback(TrainerCallback):

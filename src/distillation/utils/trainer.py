@@ -12,7 +12,7 @@ class DistillationTrainer(Seq2SeqTrainer):
         self.kl_loss = torch.nn.KLDivLoss(reduction="batchmean", log_target=True)
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.pop("labels")
+        labels = inputs.get("labels")
         student_outputs = model(**inputs)
         student_logits = student_outputs.get("logits")
 
