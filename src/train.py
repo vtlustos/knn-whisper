@@ -1,6 +1,6 @@
-from src.distillation.utils.collator import DataCollatorSpeechSeq2SeqWithPadding
-from src.distillation.utils.trainer import DistillationTrainer
-from src.distillation.utils.wer import WER
+from src.utils.data_collator import DataCollatorSpeechSeq2SeqWithPadding
+from src.utils.distillation_trainer import DistillationTrainer
+from src.utils.wer import WER
 from optparse import OptionParser
 from datasets import load_from_disk
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
@@ -46,7 +46,7 @@ def train(data_dir, out_dir, batch_size, trainer, language="czech"):
         gradient_checkpointing=True,
         fp16=True,
         evaluation_strategy="steps",
-        per_device_eval_batch_size=8,
+        per_device_eval_batch_size=batch_size,
         predict_with_generate=True,
         generation_max_length=225,
         save_steps=1000,
@@ -60,6 +60,7 @@ def train(data_dir, out_dir, batch_size, trainer, language="czech"):
         logging_first_step=True
     )
 
+    wer = WER(tokenizer=processor.tokenizer)
     if trainer == "seq2seq":
         trainer = Seq2SeqTrainer(
             args=training_args,
@@ -67,7 +68,7 @@ def train(data_dir, out_dir, batch_size, trainer, language="czech"):
             train_dataset=common_voice["train"],
             eval_dataset=common_voice["test"],
             data_collator=data_collator,
-            compute_metrics=WER(tokenizer=processor.tokenizer),
+            compute_metrics=wer,
             tokenizer=processor.feature_extractor,
         )
     elif trainer == "distill":
@@ -77,9 +78,9 @@ def train(data_dir, out_dir, batch_size, trainer, language="czech"):
             teacher_model=teacher_model,
             train_dataset=common_voice["train"],
             eval_dataset=common_voice["test"],
-            tokenizer=processor.tokenizer,
+            tokenizer=processor.feature_extractor,
             data_collator=data_collator,
-            compute_metrics=WER(tokenizer=processor.tokenizer),
+            compute_metrics=wer,
             temperature=2.0,
             supervised=False
         )
