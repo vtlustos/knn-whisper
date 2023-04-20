@@ -1,4 +1,3 @@
-import torch
 from src.distillation.utils.collator import DataCollatorSpeechSeq2SeqWithPadding
 from src.distillation.utils.trainer import DistillationTrainer
 from src.distillation.utils.wer import WER
@@ -23,19 +22,17 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
 
     # initialize student and teacher models
     student_model = WhisperForConditionalGeneration \
-        .from_pretrained("openai/whisper-small",
-                         torch_dtype=torch.float16)
+        .from_pretrained("openai/whisper-small")
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language=language[1].lower(), task="transcribe")
     student_model.config.suppress_tokens = []
 
     teacher_model = WhisperForConditionalGeneration \
-        .from_pretrained("openai/whisper-large-v2", 
-                         torch_dtype=torch.float16)
+        .from_pretrained("openai/whisper-large-v2")
     teacher_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language=language[1].lower(), task="transcribe")
     teacher_model.config.suppress_tokens = []
-    #teacher_model.to('cuda:0')
+    teacher_model.to('cuda:0').half()
 
     # setup training process
     training_args = Seq2SeqTrainingArguments(

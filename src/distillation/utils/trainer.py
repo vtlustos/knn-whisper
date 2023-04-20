@@ -26,11 +26,11 @@ class DistillationTrainer(Seq2SeqTrainer):
 
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get("labels")
-        student_outputs = model(**inputs)
+        student_outputs = model(**inputs, use_cache = False)
         student_logits = student_outputs.get("logits")
 
         with torch.no_grad():
-            teacher_outputs = self.teacher(**inputs)
+            teacher_outputs = self.teacher(**inputs, use_cache = False)
             teacher_logits = teacher_outputs.get("logits")
 
         kl_loss = self.kl_loss(
