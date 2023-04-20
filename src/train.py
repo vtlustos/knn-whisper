@@ -21,8 +21,9 @@ def train(data_dir, out_dir, batch_size, trainer, language="czech"):
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
     # initialize student and teacher models
+    student_name = "openai/whisper-small" if trainer == "distill" else "openai/whisper-large-v2"
     student_model = WhisperForConditionalGeneration \
-        .from_pretrained("openai/whisper-small")
+        .from_pretrained(student_name)
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language=language, task="transcribe")
     student_model.config.suppress_tokens = []
