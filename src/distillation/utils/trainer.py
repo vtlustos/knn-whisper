@@ -1,6 +1,8 @@
 import torch
+import tqdm
+import torch.distributed as dist
 from transformers import (Seq2SeqTrainer)
-
+from torch.nn.parallel import DistributedDataParallel
 class DistillationTrainer(Seq2SeqTrainer):
 
     def __init__(self, config, student_model, teacher_model, 
@@ -18,15 +20,36 @@ class DistillationTrainer(Seq2SeqTrainer):
             compute_metrics=compute_metrics
         )
 
-        self.teacher = teacher_model
+        dist.init_process_group(backend='nccl')
+        local_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(local_rank)
+        device = torch.device('cuda', local_rank)
+
+        self.student = DistributedDataParallel(
+            student_model.to(device).half(),
+            device_ids=[local_rank], output_device=local_rank
+        )
+        self.teacher = DistributedDataParallel(
+            teacher_model.to(device).half(),
+            device_ids=[local_rank], output_device=local_rank
+        )
         self.temperature = temperature
         self.supervised = supervised
         self.ce_loss = torch.nn.CrossEntropyLoss(ignore_index=-100)
         self.kl_loss = torch.nn.KLDivLoss(reduction="batchmean", log_target=True)
 
-    def compute_loss(self, model, inputs):
+        self.scaler = torch.cuda.amp.GradScaler()
+
+        #train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        #self.train_loader = torch.utils.data.DataLoader(train_dataset, 
+        #    batch_size=config.per_device_train_batch_size,
+        #    sampler=train_sampler
+        #)
+    
+    def compute_loss(self, inputs):
+        
         labels = inputs.pop("labels")
-        student_outputs = model(**inputs, use_cache=False)
+        student_outputs = self.student(**inputs, use_cache=False)
         student_logits = student_outputs.get("logits")
 
         with torch.no_grad():
@@ -45,3 +68,39 @@ class DistillationTrainer(Seq2SeqTrainer):
             loss = alpha * ce_loss + (1 - alpha) * kl_loss
 
         return loss
+    
+    def train(self):
+
+        for epoch in range(self.args.max_steps):
+            for step, batch in enumerate(self.get_train_dataloader()):
+
+                inputs = self._prepare_inputs(batch)
+                inputs = {k: v.to(self.device) for k, v in inputs.items() if isinstance(v, torch.Tensor)}
+                
+                loss = self.compute_loss(inputs)
+                self.optimizer.zero_grad()
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+                self.lr_scheduler.step()
+
+                if self.args.local_rank in [-1, 0] and self.args.logging_steps > 0 and step % self.args.logging_steps == 0:
+                    logs = {}
+                    logs["loss"] = loss.item()
+                    self.log(logs)
+
+                if self.args.local_rank in [-1, 0] and self.args.save_steps > 0 and step % self.args.save_steps == 0:
+                    self.save_model()
+
+                if self.args.max_steps > 0 and self.global_step >= self.args.max_steps:
+                    return
+
+            self.evaluate()
+
+
+
+
+
+
+
+
