@@ -110,6 +110,6 @@ if __name__ == "__main__":
   
     (options, args) = parser.parse_args()
 
-    train(options.data_dir, options.out_dir, options.batch_size,
+    train(options.data_dir, options.out_dir, int(options.batch_size),
         options.trainer, options.language
     )

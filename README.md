@@ -29,5 +29,5 @@ python preprocess.py -d common_voice -o /storage/brno12-cerit/home/xtlust05/data
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:.
-python src/distillation/train.py -d ../../datasets/common_voice/ -o runs/ -t distill 
+python src/distillation/train.py -d ../../datasets/common_voice/ -o runs/ -t seq2seq -b 16
 ```
