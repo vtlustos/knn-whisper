@@ -40,8 +40,7 @@ class DistillationTrainer(Seq2SeqTrainer):
         loss = kl_loss
 
         if self.supervised:
-            alpha = 0.5
-            ce_loss = self.ce_loss(student_logits, labels)
-            loss = alpha * ce_loss + (1 - alpha) * kl_loss
+            ce_loss = self.ce_loss(student_logits.view(-1, student_logits.shape[-1]), labels.view(-1))
+            loss = ce_loss + kl_loss
 
         return (loss, student_outputs) if return_outputs else loss
