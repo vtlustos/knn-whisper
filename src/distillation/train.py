@@ -1,4 +1,6 @@
 import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
 from src.distillation.utils.collator import DataCollatorSpeechSeq2SeqWithPadding
 from src.distillation.utils.trainer import DistillationTrainer
 from src.distillation.utils.wer import WER
@@ -10,7 +12,11 @@ from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments,
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token('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')
 
-def train(dataset_path, train_dir_path, language=("cs", "Czech")):
+def train(dataset_path, train_dir_path, local_rank, language=("cs", "Czech")):
+
+    dist.init_process_group(backend='nccl')
+    torch.cuda.set_device(local_rank)
+    device = torch.device('cuda', local_rank)
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -25,15 +31,24 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
     student_model = WhisperForConditionalGeneration \
         .from_pretrained("openai/whisper-small",
                          torch_dtype=torch.float16)
-    teacher_model = WhisperForConditionalGeneration \
-        .from_pretrained("openai/whisper-large-v2", 
-                         torch_dtype=torch.float16)
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language=language[1].lower(), task="transcribe")
     student_model.config.suppress_tokens = []
+    student = DistributedDataParallel(
+        student_model.to(device).half(),
+        device_ids=[local_rank], output_device=local_rank
+    )
+        
+    teacher_model = WhisperForConditionalGeneration \
+        .from_pretrained("openai/whisper-large-v2", 
+                         torch_dtype=torch.float16)
     teacher_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language=language[1].lower(), task="transcribe")
     teacher_model.config.suppress_tokens = []
+    teacher = DistributedDataParallel(
+        teacher_model.to(device).half(),
+        device_ids=[local_rank], output_device=local_rank
+    )
 
     # setup training process
     training_args = Seq2SeqTrainingArguments(
@@ -73,8 +88,9 @@ def train(dataset_path, train_dir_path, language=("cs", "Czech")):
     else:
         trainer = DistillationTrainer(
             config=training_args,
-            student_model=student_model,
-            teacher_model=teacher_model,
+            device=device,
+            student_model=student,
+            teacher_model=teacher,
             train_dataset=common_voice["train"],
             eval_dataset=common_voice["test"],
             tokenizer=processor.feature_extractor,
@@ -101,6 +117,10 @@ if __name__ == "__main__":
                       help="Path to the training directory")
     parser.add_option("-l", "--language", dest="language",
                       help="Language to use (default: cs,Czech)", default=("cs", "Czech"))
+    parser.add_option("-r", "--local-rank", dest="rank",
+                      help="Rank of the current process")
+   
     (options, args) = parser.parse_args()
 
-    train(options.dataset_path, options.train_dir_path, options.language)
+    train(options.dataset_path, options.train_dir_path, 
+          options.rank, options.language)
