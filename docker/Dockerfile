@@ -1,5 +1,8 @@
-FROM pytorch/pytorch:latest
+FROM pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    pip install transformers
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt update \
+    && apt -y upgrade \
+    && apt install -f -y ffmpeg libsm6 libxext6 git-lfs \
+    && pip install ultralytics opencv-python transformers sentence-transformers\
+    && unset DEBIAN_FRONTEND

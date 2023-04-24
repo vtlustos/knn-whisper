@@ -4,6 +4,7 @@
         "dockerfile": "../docker/Dockerfile"
     },
     "mounts": [
+        "type=bind,source=D:\\,target=/host/"
     ],
     "runArgs": ["--gpus=all"]
 }

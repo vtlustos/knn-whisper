@@ -1,0 +1,16 @@
+Bootstrap: docker
+From: pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime
+
+%post
+    # make build possible
+    export DEBIAN_FRONTEND=noninteractive    
+    
+    # install ffmpeg and opencv
+    apt update 
+    apt -y upgrade
+    apt install -f -y ffmpeg libsm6 libxext6 git-lfs gcc
+
+    # pip instal packages
+    pip install ultralytics opencv-python transformers
+
+    unset DEBIAN_FRONTEND
