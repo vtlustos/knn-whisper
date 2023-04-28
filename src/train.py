@@ -6,7 +6,7 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import prepare_model_for_training
+#from peft import prepare_model_for_training
 from peft import LoraConfig, LoraConfig, get_peft_model
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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")
@@ -47,7 +47,7 @@ def train(out_dir,
     
     # setup PEFT-LORA if required
     if(efficient_tunning):
-        student_model = prepare_model_for_training(student_model, output_embedding_layer_name="proj_out")
+        #student_model = prepare_model_for_training(student_model, output_embedding_layer_name="proj_out")
         lora_config = LoraConfig(r=32, lora_alpha=64, target_modules=["q_proj", "v_proj"], 
                                  lora_dropout=0.05, bias="none")
         student_model = get_peft_model(student_model, lora_config)
