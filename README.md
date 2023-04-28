@@ -9,7 +9,7 @@ Download the provided singularity image (built based on the /docker/pytorch-ffmp
 ```bash
 pip install gdown
 gdown https://drive.google.com/file/d/1YdXr3iwlSx0-Bnt6JkCrvcRctPxZPt2h/view?usp=sharing
-singularity exec --nv /storage/brno12-cerit/home/xtlust05/images/pytorch-ffmpeg-opencv_gcc.SIF bash
+singularity exec --bind $SCRATCHDIR:$SCRATCHDIR --nv /storage/brno12-cerit/home/xtlust05/images/pytorch-ffmpeg-opencv.SIF bash
 ```
 
 ### Build your own image
