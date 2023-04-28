@@ -167,10 +167,13 @@ if __name__ == "__main__":
                       help="Trainer (either seq2seq or distill)", default="seq2seq")
     parser.add_option("-c", "--cache-dir", dest="cache_dir",
                       default="~/.cache/huggingface/datasets")
-    parser.add_option("-e", "--efficient-tunning", dest="efficient_tunning",
-                      default=False)
+    parser.add_option("-e", "--efficient-tunning", 
+                      action="store_true",
+                      dest="efficient_tunning")
   
     (options, args) = parser.parse_args()
+
+    print("Training with options: ", options)
 
     train( 
         options.out_dir, 
