@@ -15,6 +15,7 @@ HfFolder.save_token("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")
 def train(out_dir, 
           batch_size, 
           trainer,
+          cache_dir="~/.cache/huggingface/datasets",
           efficient_tunning=False):
 
     # setup data pipeline
@@ -25,9 +26,13 @@ def train(out_dir,
     )
 
     # setup dataset
-    dataset_train_split = load_dataset("jkot/dataset_merged_preprocessed", split="train")
+    dataset_train_split = load_dataset("jkot/dataset_merged_preprocessed", 
+                                       split="train",
+                                       cache_dir=cache_dir)
     print("Train dataset:", dataset_train_split)
-    dataset_test_split = load_dataset("jkot/dataset_merged_preprocessed", split="test")
+    dataset_test_split = load_dataset("jkot/dataset_merged_preprocessed",
+                                      split="test",
+                                      cache_dir=cache_dir)
     print("Test dataset:", dataset_test_split)
     
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
@@ -62,7 +67,7 @@ def train(out_dir,
             # paths
             output_dir=out_dir,
             push_to_hub=True,
-            push_to_hub_model_id="whisper_large_v2_finetuned",
+            push_to_hub_model_id="whisper_large_v2_lora",
             push_to_hub_token="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",
             # model
             fp16=True,
@@ -160,6 +165,8 @@ if __name__ == "__main__":
                       help="Batch size.", default=16)
     parser.add_option("-t", "--trainer", dest="trainer",
                       help="Trainer (either seq2seq or distill)", default="seq2seq")
+    parser.add_option("-c", "--cache-dir", dest="cache_dir",
+                      default="~/.cache/huggingface/datasets")
     parser.add_option("-e", "--efficient-tunning", dest="efficient_tunning",
                       default=False)
   
@@ -169,5 +176,6 @@ if __name__ == "__main__":
         options.out_dir, 
         int(options.batch_size),
         options.trainer, 
+        options.cache_dir,
         options.efficient_tunning
     )
