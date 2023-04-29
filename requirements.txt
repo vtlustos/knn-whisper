@@ -6,3 +6,4 @@ jiwer
 gradio
 soundfile>=0.12.1
 tensorboard
+peft

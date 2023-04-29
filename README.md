@@ -24,7 +24,7 @@ singularity build --fakeroot <dst_path.SIF> <def_file_path.def>
 ## Training
 First preprocess the data.
 ```bash
-python preprocess.py -d common_voice -o /storage/brno12-cerit/home/xtlust05/datasets/common_voice/
+python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/large_v2_lora/ -c $SCRATCHDIR -t seq2seq
 ```
 
 ```bash
