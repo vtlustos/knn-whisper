@@ -26,11 +26,11 @@ def train(out_dir,
     )
 
     # setup dataset
-    dataset_train_split = load_dataset("jkot/dataset_merged_preprocessed", 
+    dataset_train_split = load_dataset("jkot/dataset_merged_preprocesssed_v2", 
                                        split="train",
                                        cache_dir=cache_dir)
     print("Train dataset:", dataset_train_split)
-    dataset_test_split = load_dataset("jkot/dataset_merged_preprocessed",
+    dataset_test_split = load_dataset("jkot/dataset_merged_preprocesssed_v2",
                                       split="test",
                                       cache_dir=cache_dir)
     print("Test dataset:", dataset_test_split)
