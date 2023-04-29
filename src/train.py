@@ -68,7 +68,7 @@ def train(out_dir,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         gradient_checkpointing=True,
-        gradient_accumulation_steps=1,
+        gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
         learning_rate=1e-5,
