@@ -56,7 +56,7 @@ def train(out_dir,
         # paths
         output_dir=out_dir,
         push_to_hub=True,
-        push_to_hub_model_id="whisper_large_v2",
+        push_to_hub_model_id=student_model_name.split("/")[-1],
         push_to_hub_token="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",
         
         # model
