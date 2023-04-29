@@ -24,6 +24,6 @@ singularity build --fakeroot <dst_path.SIF> <def_file_path.def>
 ## Training
 First preprocess the data.
 ```bash
-python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/small/ -c $SCRATCHDIR -b 32 -s openai/whisper-small
+python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/small/ -c $SCRATCHDIR -b 64 -s openai/whisper-small
 python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/large_v2/ -c $SCRATCHDIR -b 16 -s openai/whisper-large-v2
 ```
