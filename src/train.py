@@ -97,29 +97,33 @@ def train(out_dir,
         )
     else:
         training_args = Seq2SeqTrainingArguments(
+            # paths
             output_dir=out_dir,
+            push_to_hub=True,
+            push_to_hub_model_id="whisper_large_v2",
+            push_to_hub_token="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",
+            # model
+            fp16=True,
+            predict_with_generate=True,
+            # batch
             per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
             gradient_accumulation_steps=1,
+            # learning rate
             learning_rate=1e-5,
             warmup_steps=500,
             max_steps=5000,
-            gradient_checkpointing=True,
-            fp16=True,
-            evaluation_strategy="steps",
-            per_device_eval_batch_size=batch_size,
-            predict_with_generate=True,
             generation_max_length=225,
+            # feedback
+            gradient_checkpointing=True,
+            report_to=["tensorboard"],
+            logging_first_step=True,
+            metric_for_best_model="wer",
+            load_best_model_at_end=True,
+            logging_steps=5,
             save_steps=1000,
             eval_steps=1000,
-            logging_steps=5,
-            report_to=["tensorboard"],
-            load_best_model_at_end=True,
-            metric_for_best_model="wer",
-            greater_is_better=False,
-            push_to_hub=True,
-            push_to_hub_model_id="whisper_large_finetuned",
-            push_to_hub_token="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",
-            logging_first_step=True
+            evaluation_strategy="steps"
         )
 
     wer = WER(tokenizer=processor.tokenizer)

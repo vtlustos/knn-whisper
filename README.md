@@ -26,8 +26,3 @@ First preprocess the data.
 ```bash
 python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/large_v2_lora/ -c $SCRATCHDIR -t seq2seq
 ```
-
-```bash
-export PYTHONPATH=$PYTHONPATH:.
-python src/distillation/train.py -d ../../datasets/common_voice/ -o runs/ -t seq2seq -b 16
-```
