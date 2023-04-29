@@ -63,11 +63,11 @@ def train(out_dir,
         fp16=True,
         predict_with_generate=True,
         generation_max_length=225,
-        # gradient_checkpointing=True,
         
         # batch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
+        gradient_checkpointing=True,
         gradient_accumulation_steps=1,
        
         # learning rate
