@@ -1,3 +1,4 @@
+import os
 from utils.data_collator import DataCollatorSpeechSeq2SeqWithPadding
 from utils.distillation_trainer import DistillationTrainer
 from utils.wer import WER
@@ -6,10 +7,12 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-
+from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
 #from peft import prepare_model_for_training
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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")
+
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # for default dir paths
 def train(out_dir, 
@@ -43,6 +46,15 @@ def train(out_dir,
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
+
+    config = LoraConfig(r=32, 
+                        lora_alpha=64, 
+                        task_type=TaskType.SEQ_2_SEQ_LM, 
+                        target_modules=["q", "v"], 
+                        lora_dropout=0.05
+                        )
+    student_model = get_peft_model(student_model, config)
+    student_model.print_trainable_parameters()
     
     if teacher_model_name != None:
         teacher_model = WhisperForConditionalGeneration \
@@ -82,12 +94,16 @@ def train(out_dir,
 
         # feedback
         report_to=["tensorboard"],
-        logging_first_step=True,        
+        logging_first_step=False,        
         logging_steps=5,
         save_steps=1000,
         eval_steps=1000,
         save_strategy = "steps",
-        evaluation_strategy="steps"
+        evaluation_strategy="steps",
+
+        # lora
+        # remove_unused_columns=False,
+        # label_names=["labels"]
     )
 
     wer = WER(tokenizer=processor.tokenizer)
