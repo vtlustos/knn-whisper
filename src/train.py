@@ -12,8 +12,6 @@ from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, T
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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")
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 # for default dir paths
 def train(out_dir, 
           batch_size, 
@@ -74,13 +72,13 @@ def train(out_dir,
         
         # model
         fp16=True,
-        predict_with_generate=True,
+        # predict_with_generate=True,
         generation_max_length=225,
         
         # batch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        gradient_checkpointing=True,
+        # gradient_checkpointing=True,
         gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
@@ -115,7 +113,7 @@ def train(out_dir,
             train_dataset=dataset_train_split,
             eval_dataset=dataset_test_split,
             data_collator=data_collator,
-            compute_metrics=wer,
+            # compute_metrics=wer,
             tokenizer=processor.feature_extractor,
         )
     else:
