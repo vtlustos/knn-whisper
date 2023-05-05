@@ -12,7 +12,7 @@ from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, T
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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")
 
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # for default dir paths
 def train(out_dir, 
@@ -104,7 +104,7 @@ def train(out_dir,
 
         # lora
         remove_unused_columns=False,
-        #label_names=["labels"]
+        label_names=["labels"]
     )
 
     wer = WER(tokenizer=processor.tokenizer)
