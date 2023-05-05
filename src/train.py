@@ -48,7 +48,6 @@ def train(out_dir,
 
     config = LoraConfig(r=32, 
                         lora_alpha=64, 
-                        task_type=TaskType.SEQ_2_SEQ_LM, 
                         target_modules=["q_proj", "v_proj"], 
                         lora_dropout=0.05
                         )
@@ -72,7 +71,7 @@ def train(out_dir,
         
         # model
         fp16=True,
-        # predict_with_generate=True,
+        predict_with_generate=True,
         generation_max_length=225,
         
         # batch
@@ -113,7 +112,7 @@ def train(out_dir,
             train_dataset=dataset_train_split,
             eval_dataset=dataset_test_split,
             data_collator=data_collator,
-            # compute_metrics=wer,
+            compute_metrics=wer,
             tokenizer=processor.feature_extractor,
         )
     else:
