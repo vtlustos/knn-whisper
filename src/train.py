@@ -46,7 +46,7 @@ def train(out_dir,
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
-    print("Student model:", student_model_name)
+    print("Student model:", student_model)
 
     config = LoraConfig(r=32, 
                         lora_alpha=64, 
