@@ -29,11 +29,11 @@ def train(out_dir,
     )
 
     # setup dataset
-    dataset_train_split = load_dataset("jkot/dataset_merged_preprocesssed_v2", 
+    dataset_train_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice", 
                                        split="train",
                                        cache_dir=cache_dir)
     print("Train dataset:", dataset_train_split)
-    dataset_test_split = load_dataset("jkot/dataset_merged_preprocesssed_v2",
+    dataset_test_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice",
                                       split="test",
                                       cache_dir=cache_dir)
     print("Test dataset:", dataset_test_split)
