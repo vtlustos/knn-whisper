@@ -51,7 +51,7 @@ def train(out_dir,
     config = LoraConfig(r=32, 
                         lora_alpha=64, 
                         task_type=TaskType.SEQ_2_SEQ_LM, 
-                        target_modules=["q", "v"], 
+                        target_modules=["q_proj", "v_proj"], 
                         lora_dropout=0.05
                         )
     student_model = get_peft_model(student_model, config)
