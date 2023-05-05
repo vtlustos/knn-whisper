@@ -104,7 +104,7 @@ def train(out_dir,
 
         # lora
         remove_unused_columns=False,
-        label_names=["labels"]
+        label_names=["input_ids"]
     )
 
     wer = WER(tokenizer=processor.tokenizer)
