@@ -103,8 +103,8 @@ def train(out_dir,
         evaluation_strategy="steps",
 
         # lora
-        # remove_unused_columns=False,
-        # label_names=["labels"]
+        remove_unused_columns=False,
+        label_names=["labels"]
     )
 
     wer = WER(tokenizer=processor.tokenizer)
