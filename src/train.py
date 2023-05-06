@@ -17,7 +17,8 @@ def train(out_dir,
           batch_size, 
           cache_dir="~/.cache/huggingface/datasets",
           student_model_name="openai/whisper-small",
-          teacher_model_name=None):
+          teacher_model_name=None,
+          lora=False):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -46,13 +47,14 @@ def train(out_dir,
     student_model.config.suppress_tokens = []
     print("Student model:", student_model)
 
-    config = LoraConfig(r=32, 
-                        lora_alpha=64, 
-                        target_modules=["q_proj", "v_proj"], 
-                        lora_dropout=0.05
-                        )
-    student_model = get_peft_model(student_model, config)
-    student_model.print_trainable_parameters()
+    if lora:
+        config = LoraConfig(r=32, 
+                            lora_alpha=64, 
+                            target_modules=["q_proj", "v_proj"], 
+                            lora_dropout=0.05
+                            )
+        student_model = get_peft_model(student_model, config)
+        student_model.print_trainable_parameters()
     
     if teacher_model_name != None:
         teacher_model = WhisperForConditionalGeneration \
@@ -77,13 +79,13 @@ def train(out_dir,
         # batch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        # gradient_checkpointing=True,
+        gradient_checkpointing=True,
         gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
         learning_rate=1e-5,
         warmup_steps=500,
-        max_steps=5000,
+        max_steps=10000,
         
         # output
         metric_for_best_model="wer",
@@ -92,20 +94,23 @@ def train(out_dir,
 
         # feedback
         report_to=["tensorboard"],
-        logging_first_step=False,        
-        logging_steps=5,
+        logging_first_step=True,        
+        logging_steps=10,
         save_steps=1000,
         eval_steps=1000,
         save_strategy = "steps",
         evaluation_strategy="steps",
-
-        # lora
-        remove_unused_columns=False,
-        label_names=["labels"]
     )
+    if lora:
+        training_args.push_to_hub_model_id += "_lora"
+        training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
+        training_args.learning_rate=1e-3            # training new layers with higher lr
+        training_args.remove_unused_columns=False   # needed for PEFT
+        training_args.label_names=["labels"]        # needed for PEFT
 
     wer = WER(tokenizer=processor.tokenizer)
     if teacher_model_name == None:
+        # casual seq-to-seq training
         trainer = Seq2SeqTrainer(
             args=training_args,
             model=student_model,
@@ -116,6 +121,8 @@ def train(out_dir,
             tokenizer=processor.feature_extractor,
         )
     else:
+        # knowledge distillation training
+        training_args.push_to_hub_model_id += "_distill"
         trainer = DistillationTrainer(
             config=training_args,
             student_model=student_model,
@@ -147,10 +154,14 @@ if __name__ == "__main__":
                       help="Batch size.", default=16)  
     parser.add_option("-c", "--cache-dir", dest="cache_dir",
                       default="~/.cache/huggingface/datasets")
-    parser.add_option("-s", "--student-model-name", dest="student_model_name",
+    parser.add_option("-s", "--student-model-name", 
+                        dest="student_model_name",
                         default="openai/whisper-small")
-    parser.add_option("-t", "--teacher-model-name", dest="teacher_model_name",
+    parser.add_option("-t", "--teacher-model-name", 
+                        dest="teacher_model_name",
                         default=None)
+    parser.add_option("-l", "--lora", dest="lora",
+                        default=False)
   
     (options, args) = parser.parse_args()
 
@@ -161,5 +172,6 @@ if __name__ == "__main__":
         int(options.batch_size),
         options.cache_dir,
         options.student_model_name,
-        options.teacher_model_name
+        options.teacher_model_name,
+        options.lora
     )
