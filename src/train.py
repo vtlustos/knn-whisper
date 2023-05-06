@@ -8,9 +8,9 @@ from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments,
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
 from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
-#from peft import prepare_model_for_training
+
 from huggingface_hub.hf_api import HfFolder 
-HfFolder.save_token("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")
+HfFolder.save_token("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") # token jkot
 
 # for default dir paths
 def train(out_dir, 
@@ -69,7 +69,7 @@ def train(out_dir,
         output_dir=out_dir,
         push_to_hub=True,
         push_to_hub_model_id=student_model_name.split("/")[-1],
-        push_to_hub_token="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",
+        push_to_hub_token="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", # token vtlustos
         
         # model
         fp16=True,
