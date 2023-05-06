@@ -161,6 +161,7 @@ if __name__ == "__main__":
                         dest="teacher_model_name",
                         default=None)
     parser.add_option("-l", "--lora", dest="lora",
+                        action="store_true",
                         default=False)
   
     (options, args) = parser.parse_args()
