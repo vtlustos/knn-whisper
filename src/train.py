@@ -48,11 +48,13 @@ def train(out_dir,
     print("Student model:", student_model)
 
     if lora:
-        config = LoraConfig(r=32, 
-                            lora_alpha=64, 
-                            target_modules=["q_proj", "v_proj"], 
-                            lora_dropout=0.05
-                            )
+        config = LoraConfig(
+            r=32, 
+            lora_alpha=64, 
+            target_modules=["q_proj", "v_proj"],
+            lora_dropout=0.05,
+            bias="none"
+        )
         student_model = get_peft_model(student_model, config)
         student_model.print_trainable_parameters()
     
@@ -95,7 +97,7 @@ def train(out_dir,
         # feedback
         report_to=["tensorboard"],
         logging_first_step=True,        
-        logging_steps=10,
+        logging_steps=100,
         save_steps=1000,
         eval_steps=1000,
         save_strategy = "steps",
@@ -104,7 +106,6 @@ def train(out_dir,
     if lora:
         training_args.push_to_hub_model_id += "_lora"
         training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
-        training_args.learning_rate=1e-3            # training new layers with higher lr
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
 
