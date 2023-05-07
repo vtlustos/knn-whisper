@@ -57,6 +57,7 @@ def train(out_dir,
         )
         student_model = get_peft_model(student_model, config)
         student_model.print_trainable_parameters()
+        print(student_model)
     
     if teacher_model_name != None:
         teacher_model = WhisperForConditionalGeneration \
@@ -108,6 +109,8 @@ def train(out_dir,
         training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
+
+    print(training_args)
 
     wer = WER(tokenizer=processor.tokenizer)
     if teacher_model_name == None:
