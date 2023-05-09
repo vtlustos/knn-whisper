@@ -1,4 +1,4 @@
-import os
+import torch
 from utils.data_collator import DataCollatorSpeechSeq2SeqWithPadding
 from utils.distillation_trainer import DistillationTrainer
 from utils.wer import WER
@@ -7,7 +7,7 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import prepare_model_for_int8_training, LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
@@ -52,10 +52,18 @@ def train(out_dir,
     print("Student model:", student_model)
 
     if int8:
-        student_model = prepare_model_for_int8_training(
-            student_model,
-            use_gradient_checkpointing=True
-        )
+        for param in student_model.parameters():
+            param.requires_grad = False  # freeze the model - train adapters later
+            if param.ndim == 1:
+                # cast the small parameters (e.g. layernorm) to fp32 for stability
+                param.data = param.data.to(torch.float32)
+
+            student_model.gradient_checkpointing_enable()  # reduce number of stored activations
+            student_model.enable_input_require_grads()
+            class CastOutputToFloat(torch.nn.Sequential):
+                def forward(self, x): 
+                    return super().forward(x).to(torch.float32)
+                student_model.lm_head = CastOutputToFloat(student_model.lm_head)
 
     if lora:
         config = LoraConfig(
