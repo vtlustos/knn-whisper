@@ -42,7 +42,10 @@ def train(out_dir,
 
     # initialize student and teacher models
     student_model = WhisperForConditionalGeneration \
-        .from_pretrained(student_model_name, load_in_8bit=int8)
+        .from_pretrained(student_model_name, 
+            load_in_8bit=int8,
+            device_map='auto'
+        )
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
@@ -68,7 +71,10 @@ def train(out_dir,
     
     if teacher_model_name != None:
         teacher_model = WhisperForConditionalGeneration \
-            .from_pretrained(teacher_model_name, load_in_8bit=int8)
+            .from_pretrained(teacher_model_name, 
+                load_in_8bit=int8,
+                device_map='auto'
+            )
         teacher_model.config.forced_decoder_ids = processor \
             .get_decoder_prompt_ids(language="czech", task="transcribe")
         teacher_model.config.suppress_tokens = []
@@ -153,7 +159,7 @@ def train(out_dir,
     trainer.add_callback(EvaluateFirstStepCallback())
 
     trainer.train()
-    trainer.push_to_hub()
+    trainer.push_to_hub(training_args.push_to_hub_model_id)
 
 if __name__ == "__main__":
     parser = OptionParser()
