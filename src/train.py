@@ -7,7 +7,7 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
+from peft import prepare_model_for_int8_training, LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
@@ -52,18 +52,7 @@ def train(out_dir,
     print("Student model:", student_model)
 
     if int8:
-        for param in student_model.parameters():
-            param.requires_grad = False  # freeze the model - train adapters later
-            if param.ndim == 1:
-                param.data = param.data.to(torch.float32)
-
-        student_model.gradient_checkpointing_enable()
-        student_model.enable_input_require_grads()
-
-        class CastOutputToFloat(torch.nn.Sequential):
-            def forward(self, x): 
-                return super().forward(x).to(torch.float32)
-        student_model.proj_out = CastOutputToFloat(student_model.proj_out)
+        student_model = prepare_model_for_int8_training(student_model)
 
     if lora:
         config = LoraConfig(
