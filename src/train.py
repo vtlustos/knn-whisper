@@ -63,7 +63,7 @@ def train(out_dir,
         class CastOutputToFloat(torch.nn.Sequential):
             def forward(self, x): 
                 return super().forward(x).to(torch.float32)
-        student_model.lm_head = CastOutputToFloat(student_model.lm_head)
+        student_model.proj_out = CastOutputToFloat(student_model.proj_out)
 
     if lora:
         config = LoraConfig(
