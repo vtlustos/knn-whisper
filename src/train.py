@@ -156,6 +156,9 @@ def train(out_dir,
     trainer.add_callback(EvaluateFirstStepCallback())
 
     trainer.train()
+
+    # save model
+    student_model.save_pretrained(training_args.output_dir)
     trainer.push_to_hub(training_args.push_to_hub_model_id)
 
 if __name__ == "__main__":
