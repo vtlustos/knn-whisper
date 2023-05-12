@@ -6,7 +6,9 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
+from peft import (prepare_model_for_int8_training, LoraConfig, 
+                  PeftModel, LoraModel, LoraConfig, 
+                  get_peft_model, TaskType)
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
@@ -17,7 +19,8 @@ def train(out_dir,
           cache_dir="~/.cache/huggingface/datasets",
           student_model_name="openai/whisper-small",
           teacher_model_name=None,
-          lora=False):
+          lora=False,
+          int8=False):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -39,8 +42,14 @@ def train(out_dir,
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
     # initialize student and teacher models
-    student_model = WhisperForConditionalGeneration \
-        .from_pretrained(student_model_name, load_in_8bit=True, device_map="auto")
+    if int8:
+        student_model = WhisperForConditionalGeneration \
+            .from_pretrained(student_model_name, load_in_8bit=True, device_map="auto")
+        student_model = prepare_model_for_int8_training(student_model)
+    else:
+        student_model = WhisperForConditionalGeneration \
+            .from_pretrained(student_model_name)
+        
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
@@ -97,13 +106,14 @@ def train(out_dir,
 
         # feedback
         report_to=["tensorboard"],
-        logging_first_step=True,        
+        # logging_first_step=True,        
         logging_steps=1,
+        eval_steps=10,
         #logging_steps=100,
         #save_steps=1000,
         #eval_steps=1000,
         save_strategy = "steps",
-        #evaluation_strategy="steps",
+        evaluation_strategy="steps",
     )
     if lora:
         training_args.push_to_hub_model_id += "_lora"
@@ -120,7 +130,7 @@ def train(out_dir,
             args=training_args,
             model=student_model,
             train_dataset=dataset_train_split,
-            #eval_dataset=dataset_test_split,
+            eval_dataset=dataset_test_split,
             data_collator=data_collator,
             #compute_metrics=wer,
             tokenizer=processor.feature_extractor,
@@ -149,8 +159,9 @@ def train(out_dir,
     trainer.add_callback(EvaluateFirstStepCallback())
 
     trainer.train()
+
     # save model
-    student_model.save_pretrained(training_args.output_dir)
+    trainer.model.save_pretrained(training_args.output_dir)
     trainer.push_to_hub(training_args.push_to_hub_model_id)
 
 if __name__ == "__main__":
