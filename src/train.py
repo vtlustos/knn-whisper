@@ -186,6 +186,9 @@ if __name__ == "__main__":
     parser.add_option("-l", "--lora", dest="lora",
                         action="store_true",
                         default=False)
+    parser.add_option("-i", "--int8", dest="int8",
+                        action="store_true",
+                        default=False)
   
     (options, args) = parser.parse_args()
 
@@ -197,5 +200,6 @@ if __name__ == "__main__":
         options.cache_dir,
         options.student_model_name,
         options.teacher_model_name,
-        options.lora
+        options.lora,
+        options.int8
     )
