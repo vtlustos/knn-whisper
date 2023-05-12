@@ -115,6 +115,7 @@ def train(out_dir,
     )
     if lora:
         training_args.push_to_hub_model_id += "_lora"
+        training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
 
