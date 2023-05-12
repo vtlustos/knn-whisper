@@ -40,7 +40,7 @@ def train(out_dir,
 
     # initialize student and teacher models
     student_model = WhisperForConditionalGeneration \
-        .from_pretrained(student_model_name)
+        .from_pretrained(student_model_name, load_in_8bit=True, device_map="auto")
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
@@ -75,33 +75,35 @@ def train(out_dir,
         
         # model
         fp16=True,
-        predict_with_generate=True,
+        # predict_with_generate=True,
         generation_max_length=225,
         
         # batch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        gradient_checkpointing=True,
+        # gradient_checkpointing=True,
         gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
         learning_rate=1e-5,
-        warmup_steps=500,
-        max_steps=10000,
-        
+        #warmup_steps=500,
+        #max_steps=10000,
+        max_steps=10,
+
         # output
-        metric_for_best_model="wer",
-        greater_is_better=True,
-        load_best_model_at_end=True,
+        #metric_for_best_model="wer",
+        #greater_is_better=True,
+        #load_best_model_at_end=True,
 
         # feedback
         report_to=["tensorboard"],
         logging_first_step=True,        
-        logging_steps=100,
-        save_steps=1000,
-        eval_steps=1000,
+        logging_steps=1,
+        #logging_steps=100,
+        #save_steps=1000,
+        #eval_steps=1000,
         save_strategy = "steps",
-        evaluation_strategy="steps",
+        #evaluation_strategy="steps",
     )
     if lora:
         training_args.push_to_hub_model_id += "_lora"
@@ -118,9 +120,9 @@ def train(out_dir,
             args=training_args,
             model=student_model,
             train_dataset=dataset_train_split,
-            eval_dataset=dataset_test_split,
+            #eval_dataset=dataset_test_split,
             data_collator=data_collator,
-            compute_metrics=wer,
+            #compute_metrics=wer,
             tokenizer=processor.feature_extractor,
         )
     else:
