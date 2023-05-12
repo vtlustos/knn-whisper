@@ -57,8 +57,8 @@ def train(out_dir,
 
     if lora:
         config = LoraConfig(
-            r=64, 
-            lora_alpha=128, 
+            r=8, 
+            lora_alpha=16, 
             target_modules=["q_proj", "v_proj"],
             lora_dropout=0.05,
             bias="none"
