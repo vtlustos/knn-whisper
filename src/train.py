@@ -84,17 +84,17 @@ def train(out_dir,
         
         # model
         fp16=True,
-        # predict_with_generate=True,
+        predict_with_generate=True,
         generation_max_length=225,
         
         # batch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        # gradient_checkpointing=True,
+        gradient_checkpointing=True,
         gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
-        learning_rate=1e-4,
+        learning_rate=1e-5,
         warmup_steps=50,
         max_steps=5000,
 
@@ -107,16 +107,22 @@ def train(out_dir,
         report_to=["tensorboard"],
         logging_first_step=True,        
         logging_steps=100,
-        #save_steps=1000,
+        save_steps=1000,
         eval_steps=1000,
         save_strategy = "steps",
         evaluation_strategy="steps",
     )
     if lora:
         training_args.push_to_hub_model_id += "_lora"
-        training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
+        # training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
+        training_args.learning_rate = 1e-4          # higher LR for lora
+        training_args.save_strategy = "no"          # needed for PEFT
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
+    
+    if int8:
+        training_args.push_to_hub_model_id += "_int8"
+        training_args.predict_with_generate = False
 
     print(training_args)
 
@@ -158,7 +164,9 @@ def train(out_dir,
     trainer.train()
 
     # save model
-    trainer.model.save_pretrained(training_args.output_dir)
+    trainer.model.save_pretrained(training_args.output_dir)                 # trained PEFT + LORA model
+    trainer.model.base_model.save_pretrained(training_args.output_dir)      # base model
+    processor.feature_extractor.save_pretrained(training_args.output_dir)   # tokenizer 
     trainer.push_to_hub(training_args.push_to_hub_model_id)
 
 if __name__ == "__main__":
