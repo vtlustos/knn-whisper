@@ -94,24 +94,21 @@ def train(out_dir,
         gradient_accumulation_steps=1 if batch_size >= 16 else 16 // batch_size,
        
         # learning rate
-        learning_rate=1e-5,
-        #warmup_steps=500,
-        #max_steps=10000,
-        max_steps=10,
+        learning_rate=1e-4,
+        warmup_steps=50,
+        max_steps=5000,
 
         # output
         #metric_for_best_model="wer",
-        #greater_is_better=True,
-        #load_best_model_at_end=True,
+        greater_is_better=True,
+        load_best_model_at_end=True,
 
         # feedback
         report_to=["tensorboard"],
-        # logging_first_step=True,        
-        logging_steps=1,
-        eval_steps=10,
-        #logging_steps=100,
+        logging_first_step=True,        
+        logging_steps=100,
         #save_steps=1000,
-        #eval_steps=1000,
+        eval_steps=1000,
         save_strategy = "steps",
         evaluation_strategy="steps",
     )
