@@ -79,7 +79,7 @@ def train(out_dir,
         # paths
         output_dir=out_dir,
         push_to_hub=True,
-        push_to_hub_model_id=student_model_name.split("/")[-1],
+        hub_model_id =student_model_name.split("/")[-1],
         push_to_hub_token="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", # token vtlustos
         
         # model
@@ -113,7 +113,7 @@ def train(out_dir,
         evaluation_strategy="steps",
     )
     if lora:
-        training_args.push_to_hub_model_id += "_lora"
+        training_args.hub_model_id += "_lora"
         # training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
         training_args.learning_rate = 1e-4          # higher LR for lora
         training_args.save_strategy = "no"          # needed for PEFT
@@ -121,7 +121,7 @@ def train(out_dir,
         training_args.label_names=["labels"]        # needed for PEFT
     
     if int8:
-        training_args.push_to_hub_model_id += "_int8"
+        training_args.hub_model_id += "_int8"
         training_args.predict_with_generate = False
 
     print(training_args)
@@ -140,7 +140,7 @@ def train(out_dir,
         )
     else:
         # knowledge distillation training
-        training_args.push_to_hub_model_id += "_distill"
+        training_args.hub_model_id += "_distilled"
         trainer = DistillationTrainer(
             config=training_args,
             student_model=student_model,
@@ -167,7 +167,7 @@ def train(out_dir,
     trainer.model.save_pretrained(training_args.output_dir)                 # trained PEFT + LORA model
     trainer.model.base_model.save_pretrained(training_args.output_dir)      # base model
     processor.feature_extractor.save_pretrained(training_args.output_dir)   # tokenizer 
-    trainer.push_to_hub(training_args.push_to_hub_model_id)
+    trainer.push_to_hub()
 
 if __name__ == "__main__":
     parser = OptionParser()
