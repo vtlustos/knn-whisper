@@ -11,6 +11,7 @@ From: pytorch/pytorch:2.0.0-cuda11.7-cudnn8-runtime
     apt install -f -y ffmpeg libsm6 libxext6 git-lfs gcc
 
     # pip instal packages
-    pip install ultralytics opencv-python transformers
+    pip install ultralytics opencv-python transformers datasets>=2.6.1 librosa evaluate>=0.3.0 \ 
+        jiwer gradio soundfile>=0.12.1 tensorboard peft
 
     unset DEBIAN_FRONTEND
