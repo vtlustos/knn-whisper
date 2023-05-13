@@ -29,22 +29,14 @@ def train(out_dir,
     )
 
     # setup dataset
-    # dset = load_from_disk("/scratch.ssd/xvlasa15/job_15406032.meta-pbs.metacentrum.cz/common-voice-13-small")
     dset = load_from_disk(dataset_dir)
-    # dataset_train_split = dset["train"]
-    # dataset_train_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice", 
-    #                                    split="train",
-    #                                    cache_dir=cache_dir)
-    # print("Train dataset:", dataset_train_split)
-    # dataset_test_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice",
-    #                                   split="test",
-    #                                   cache_dir=cache_dir)
+
     dataset_test_split = dset["test"]
     print("Test dataset:", dataset_test_split)
     
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
-    # initialize student and teacher models
+    # initialize model
     student_model = WhisperForConditionalGeneration \
         .from_pretrained(student_model_name
         )
