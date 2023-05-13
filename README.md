@@ -37,8 +37,6 @@ First preprocess the data. Then run src/train.py.
 
 ### Example
 
-
-
 ```bash
 python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/small/ -c $SCRATCHDIR -b 64 -s openai/whisper-small
 python src/train.py -o /storage/brno12-cerit/home/xtlust05/whisper/large_v2/ -c $SCRATCHDIR -b 16 -s openai/whisper-large-v2
