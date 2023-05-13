@@ -6,7 +6,9 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
+from peft import (prepare_model_for_int8_training, LoraConfig, 
+                  PeftModel, LoraModel, LoraConfig, 
+                  get_peft_model, TaskType)
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
@@ -17,7 +19,8 @@ def train(out_dir,
           cache_dir="~/.cache/huggingface/datasets",
           student_model_name="openai/whisper-small",
           teacher_model_name=None,
-          lora=False):
+          lora=False,
+          int8=False):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -39,8 +42,14 @@ def train(out_dir,
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
     # initialize student and teacher models
-    student_model = WhisperForConditionalGeneration \
-        .from_pretrained(student_model_name)
+    if int8:
+        student_model = WhisperForConditionalGeneration \
+            .from_pretrained(student_model_name, load_in_8bit=True, device_map="auto")
+        student_model = prepare_model_for_int8_training(student_model)
+    else:
+        student_model = WhisperForConditionalGeneration \
+            .from_pretrained(student_model_name)
+        
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
@@ -48,8 +57,8 @@ def train(out_dir,
 
     if lora:
         config = LoraConfig(
-            r=64, 
-            lora_alpha=128, 
+            r=16, 
+            lora_alpha=16, 
             target_modules=["q_proj", "v_proj"],
             lora_dropout=0.05,
             bias="none"
@@ -70,7 +79,7 @@ def train(out_dir,
         # paths
         output_dir=out_dir,
         push_to_hub=True,
-        push_to_hub_model_id=student_model_name.split("/")[-1],
+        hub_model_id =student_model_name.split("/")[-1],
         push_to_hub_token="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", # token vtlustos
         
         # model
@@ -86,11 +95,11 @@ def train(out_dir,
        
         # learning rate
         learning_rate=1e-5,
-        warmup_steps=500,
-        max_steps=10000,
-        
+        warmup_steps=50,
+        max_steps=5000,
+
         # output
-        metric_for_best_model="wer",
+        #metric_for_best_model="wer",
         greater_is_better=True,
         load_best_model_at_end=True,
 
@@ -104,10 +113,16 @@ def train(out_dir,
         evaluation_strategy="steps",
     )
     if lora:
-        training_args.push_to_hub_model_id += "_lora"
-        training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
+        training_args.hub_model_id += "_lora"
+        # training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
+        training_args.learning_rate = 1e-4          # higher LR for lora
+        training_args.save_strategy = "no"          # needed for PEFT
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
+    
+    if int8:
+        training_args.hub_model_id += "_int8"
+        training_args.predict_with_generate = False
 
     print(training_args)
 
@@ -120,12 +135,12 @@ def train(out_dir,
             train_dataset=dataset_train_split,
             eval_dataset=dataset_test_split,
             data_collator=data_collator,
-            compute_metrics=wer,
+            #compute_metrics=wer,
             tokenizer=processor.feature_extractor,
         )
     else:
         # knowledge distillation training
-        training_args.push_to_hub_model_id += "_distill"
+        training_args.hub_model_id += "_distilled"
         trainer = DistillationTrainer(
             config=training_args,
             student_model=student_model,
@@ -147,9 +162,12 @@ def train(out_dir,
     trainer.add_callback(EvaluateFirstStepCallback())
 
     trainer.train()
+
     # save model
-    student_model.save_pretrained(training_args.output_dir)
-    trainer.push_to_hub(training_args.push_to_hub_model_id)
+    trainer.model.save_pretrained(training_args.output_dir)                 # trained PEFT + LORA model
+    trainer.model.base_model.save_pretrained(training_args.output_dir)      # base model
+    processor.feature_extractor.save_pretrained(training_args.output_dir)   # tokenizer 
+    trainer.push_to_hub()
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -168,6 +186,9 @@ if __name__ == "__main__":
     parser.add_option("-l", "--lora", dest="lora",
                         action="store_true",
                         default=False)
+    parser.add_option("-i", "--int8", dest="int8",
+                        action="store_true",
+                        default=False)
   
     (options, args) = parser.parse_args()
 
@@ -179,5 +200,6 @@ if __name__ == "__main__":
         options.cache_dir,
         options.student_model_name,
         options.teacher_model_name,
-        options.lora
+        options.lora,
+        options.int8
     )
