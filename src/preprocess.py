@@ -42,12 +42,14 @@ def preprocess(dataset_name, dst_path, language=("cs", "Czech"), num_proc=16):
 
     elif dataset_name == "voxpopuli":
         voxpopuli = DatasetDict()
-        voxpopuli["train"] = load_dataset(
-            "facebook/voxpopuli",  language[0], split="train+validation", use_auth_token=True)
+        # voxpopuli["train"] = load_dataset(
+        #     "facebook/voxpopuli",  language[0], split="train+validation", use_auth_token=True)
         voxpopuli["test"] = load_dataset(
             "facebook/voxpopuli",  language[0], split="test", use_auth_token=True)
+        print(voxpopuli.column_names)
         voxpopuli = voxpopuli.remove_columns(
             ["audio_id", "language", "normalized_text", "gender", "speaker_id", "is_gold_transcript", "accent"])
+        print(voxpopuli.column_names)
         voxpopuli = voxpopuli.cast_column("audio", Audio(sampling_rate=16000))
         def prepare_dataset(batch):
             # load and resample audio data from 48 to 16kHz
@@ -64,10 +66,10 @@ def preprocess(dataset_name, dst_path, language=("cs", "Czech"), num_proc=16):
         def rawtext_trn_missing(dataset_item):
             return dataset_item["raw_text"].isspace() or len(dataset_item["raw_text"]) == 0
 
-        voxpopuli["train"] = voxpopuli["train"].filter(lambda item: not rawtext_trn_missing(item))
+        # voxpopuli["train"] = voxpopuli["train"].filter(lambda item: not rawtext_trn_missing(item))
         voxpopuli["test"] = voxpopuli["test"].filter(lambda item: not rawtext_trn_missing(item))
         voxpopuli = voxpopuli.map(
-            prepare_dataset, remove_columns=voxpopuli.column_names["train"], num_proc=num_proc)
+            prepare_dataset, remove_columns=voxpopuli.column_names["test"], num_proc=num_proc)
         voxpopuli.save_to_disk(dst_path)
 
     elif dataset_name == "parliament":

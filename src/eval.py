@@ -8,14 +8,18 @@ from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments,
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
 
+from peft import PeftModel, PeftConfig
+
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
 
 # for default dir paths
 def train(out_dir, 
           batch_size, 
-          cache_dir="~/.cache/huggingface/datasets",
-          student_model_name="openai/whisper-small"):
+          cache_dir,
+          student_model_name,
+          dataset_dir,
+          peft_path):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -25,12 +29,13 @@ def train(out_dir,
     )
 
     # setup dataset
-    dset = load_from_disk("/scratch.ssd/xvlasa15/job_15406032.meta-pbs.metacentrum.cz/common-voice-13-small")
-    dataset_train_split = dset["train"]
+    # dset = load_from_disk("/scratch.ssd/xvlasa15/job_15406032.meta-pbs.metacentrum.cz/common-voice-13-small")
+    dset = load_from_disk(dataset_dir)
+    # dataset_train_split = dset["train"]
     # dataset_train_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice", 
     #                                    split="train",
     #                                    cache_dir=cache_dir)
-    print("Train dataset:", dataset_train_split)
+    # print("Train dataset:", dataset_train_split)
     # dataset_test_split = load_dataset("jkot/merged_preprocessed_parliament_commonvoice",
     #                                   split="test",
     #                                   cache_dir=cache_dir)
@@ -46,6 +51,10 @@ def train(out_dir,
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
+    if(peft_path is not None):
+        # config = PeftConfig.from_pretrained(peft_path)
+        student_model = PeftModel.from_pretrained(student_model, peft_path)
+
     print("Student model:", student_model)
 
 
@@ -113,6 +122,9 @@ if __name__ == "__main__":
     parser.add_option("-s", "--student-model-name", 
                         dest="student_model_name",
                         default="openai/whisper-small")
+    parser.add_option("-d", "--dataset-path", dest="dataset_dir",
+                    help="Path to preprocessed dataset with eval split")
+    parser.add_option("-p", "--peft-model-path", dest="peft_path", help="Path to the peft model", default=None)
   
     (options, args) = parser.parse_args()
 
@@ -122,5 +134,7 @@ if __name__ == "__main__":
         options.out_dir, 
         int(options.batch_size),
         options.cache_dir,
-        options.student_model_name
+        options.student_model_name,
+        options.dataset_dir,
+        options.peft_path
     )
