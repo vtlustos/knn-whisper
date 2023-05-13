@@ -3,23 +3,19 @@ from utils.data_collator import DataCollatorSpeechSeq2SeqWithPadding
 from utils.distillation_trainer import DistillationTrainer
 from utils.wer import WER
 from optparse import OptionParser
-from datasets import load_from_disk, load_dataset
+from datasets import load_from_disk
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
-                          WhisperProcessor, TrainerCallback)
-
-from peft import PeftModel, PeftConfig
+                          WhisperProcessor)
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
 
 # for default dir paths
-def train(out_dir, 
+def eval(out_dir, 
           batch_size, 
-          cache_dir,
           student_model_name,
-          dataset_dir,
-          peft_path):
+          dataset_dir):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -43,9 +39,6 @@ def train(out_dir,
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
-    if(peft_path is not None):
-        # config = PeftConfig.from_pretrained(peft_path)
-        student_model = PeftModel.from_pretrained(student_model, peft_path)
 
     print("Student model:", student_model)
 
@@ -109,24 +102,17 @@ if __name__ == "__main__":
                         help="Path to the output directory.")
     parser.add_option("-b", "--batch-size", dest="batch_size",
                       help="Batch size.", default=16)  
-    parser.add_option("-c", "--cache-dir", dest="cache_dir",
-                      default="~/.cache/huggingface/datasets")
     parser.add_option("-s", "--student-model-name", 
                         dest="student_model_name",
                         default="openai/whisper-small")
     parser.add_option("-d", "--dataset-path", dest="dataset_dir",
                     help="Path to preprocessed dataset with eval split")
-    parser.add_option("-p", "--peft-model-path", dest="peft_path", help="Path to the peft model", default=None)
   
     (options, args) = parser.parse_args()
 
-    print("Training with options: ", options)
-
-    train( 
+    eval( 
         options.out_dir, 
         int(options.batch_size),
-        options.cache_dir,
         options.student_model_name,
-        options.dataset_dir,
-        options.peft_path
+        options.dataset_dir
     )
