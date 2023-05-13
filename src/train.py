@@ -1,4 +1,3 @@
-import torch
 from utils.data_collator import DataCollatorSpeechSeq2SeqWithPadding
 from utils.distillation_trainer import DistillationTrainer
 from utils.wer import WER
@@ -7,7 +6,7 @@ from datasets import load_dataset
 from transformers import (Seq2SeqTrainer, Seq2SeqTrainingArguments, 
                           WhisperForConditionalGeneration, 
                           WhisperProcessor, TrainerCallback)
-from peft import prepare_model_for_int8_training, LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model, TaskType
 
 from huggingface_hub.hf_api import HfFolder 
 HfFolder.save_token("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") # token jkot
@@ -18,8 +17,7 @@ def train(out_dir,
           cache_dir="~/.cache/huggingface/datasets",
           student_model_name="openai/whisper-small",
           teacher_model_name=None,
-          lora=False,
-          int8=False):
+          lora=False):
 
     # setup data pipeline
     pipeline_name = "openai/whisper-large-v2"
@@ -42,17 +40,11 @@ def train(out_dir,
 
     # initialize student and teacher models
     student_model = WhisperForConditionalGeneration \
-        .from_pretrained(student_model_name, 
-            load_in_8bit=int8,
-            device_map='auto'
-        )
+        .from_pretrained(student_model_name)
     student_model.config.forced_decoder_ids = processor \
         .get_decoder_prompt_ids(language="czech", task="transcribe")
     student_model.config.suppress_tokens = []
     print("Student model:", student_model)
-
-    if int8:
-        student_model = prepare_model_for_int8_training(student_model)
 
     if lora:
         config = LoraConfig(
@@ -68,13 +60,11 @@ def train(out_dir,
     
     if teacher_model_name != None:
         teacher_model = WhisperForConditionalGeneration \
-            .from_pretrained(teacher_model_name, 
-                load_in_8bit=int8,
-                device_map='auto'
-            )
+            .from_pretrained(teacher_model_name)
         teacher_model.config.forced_decoder_ids = processor \
             .get_decoder_prompt_ids(language="czech", task="transcribe")
         teacher_model.config.suppress_tokens = []
+        teacher_model.to('cuda:0').half()
 
     training_args = Seq2SeqTrainingArguments(
         # paths
@@ -115,6 +105,7 @@ def train(out_dir,
     )
     if lora:
         training_args.push_to_hub_model_id += "_lora"
+        training_args.gradient_checkpointing=False  # lora does not support gradient checkpointing
         training_args.remove_unused_columns=False   # needed for PEFT
         training_args.label_names=["labels"]        # needed for PEFT
 
@@ -156,6 +147,8 @@ def train(out_dir,
     trainer.add_callback(EvaluateFirstStepCallback())
 
     trainer.train()
+    # save model
+    student_model.save_pretrained(training_args.output_dir)
     trainer.push_to_hub(training_args.push_to_hub_model_id)
 
 if __name__ == "__main__":
@@ -175,9 +168,6 @@ if __name__ == "__main__":
     parser.add_option("-l", "--lora", dest="lora",
                         action="store_true",
                         default=False)
-    parser.add_option("-i", "--int8", dest="int8",
-                        action="store_true",
-                        default=False)
   
     (options, args) = parser.parse_args()
 
@@ -189,6 +179,5 @@ if __name__ == "__main__":
         options.cache_dir,
         options.student_model_name,
         options.teacher_model_name,
-        options.lora,
-        options.int8
+        options.lora
     )
